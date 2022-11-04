@@ -1,6 +1,7 @@
 import itertools
-from typing import List, Union
 import math
+from typing import List, Union
+
 
 class SizeException(Exception):
     def __str__(self):
@@ -47,21 +48,21 @@ class NeuralNode:
         self.label = "NeuralNode"
 
     def __str__(self) -> str:
-        x = [i["x"] for i in self.inputs]
-        w = [i["w"] for i in self.inputs]
+        x = self.get_input()
+        w = self.get_weights()
 
         string = self.label
         if self.label != "NeuralNode":
             string += "(X:" + str(x) + ", Y:" + str(
-            self.output) + ", S:" + str(self.is_processed) + ")"
+                self.output) + ", S:" + str(self.is_processed) + ")"
         else:
             string += "(X:" + str(x) + ", W:" + str(w) + ", B:" + str(self.bias.val) + ", Y:" + str(
-            self.output.val) + ", S:" + str(self.is_processed) + ")"
+                self.output.val) + ", S:" + str(self.is_processed) + ")"
         # string += "<" + str(id(self)) + ">"
         return string
 
     def __repr__(self) -> str:
-        string = self.label + "(" + str(self.output.val)+ ")"
+        string = self.label + "(" + str(self.output.val) + ")"
         # string += "<" + str(id(self)) + ">"
         return string
 
@@ -71,6 +72,12 @@ class NeuralNode:
         self.sum_value.val = 0
         self.is_processed = False
         self.output.val = 0
+
+    def get_input(self) -> List[NeuralVar]:
+        return [i["x"] for i in self.inputs]
+
+    def get_weights(self):
+        return [i["w"] for i in self.inputs]
 
     def add_input(self, w_input: NeuralVar) -> None:
         self.inputs.append({"x": NeuralVar(0), "w": w_input})
@@ -83,17 +90,17 @@ class NeuralNode:
             raise SizeException
         self.reset()
         for ix, x in enumerate(x_input):
-            if isinstance(x, int):
-                self.inputs[ix]["x"] = NeuralVar(x)
-            else:
-                self.inputs[ix]["x"] = x
+            self.inputs[ix]["x"] = self.validate(x)
 
     def load_singular(self, pos: int, x_input: Union[int, NeuralVar]) -> None:
         self.reset()
-        if isinstance(x_input, int):
-            self.inputs[pos]["x"] = NeuralVar(x_input)
+        self.inputs[pos]["x"] = self.validate(x_input)
+
+    def validate(self, x):
+        if isinstance(x, int):
+            return NeuralVar(x)
         else:
-            self.inputs[pos]["x"] = x_input
+            return x
 
     def sum(self) -> None:
         r = 0
