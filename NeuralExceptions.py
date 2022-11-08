@@ -12,6 +12,7 @@ class TypeException(Exception):
     def __str__(self):
         return "Ввод не числовой!"
 
+
 class PrivateException(Exception):
     def __str__(self):
         return "Изменение не через публичный метод!"

@@ -7,30 +7,49 @@ class NeuralVar:
     __val__: float = 0.0
 
     def __init__(self, val: Union[int, float] = 0):
-        self.set(val)
+        self.__val__ = val
 
-    def validate(self, val) -> float:
+    @property
+    def val(self) -> float:
+        """
+
+        :rtype: object
+        """
+        return self.__val__
+
+    @val.setter
+    def val(self, val: Union[int, float]) -> None:
+        """
+
+        :param val:
+        """
         if not isinstance(val, (int, float)):
             raise TypeException
         else:
-            return float(val)
-
-    def set(self, val: int) -> None:
-        self.__val__ = self.validate(val)
-
-    def get(self) -> float:
-        return self.__val__
+            self.__val__ = float(val)
 
     def get_ptr(self) -> str:
+        """
+
+        :return:
+        """
         return str(id(self))
 
     def __str__(self) -> str:
-        string = "NeuralVar"
-        string += "(" + str(self.get()) + ")"
-        string += "<" + self.get_ptr() + ">"
+        """
+
+        :return:
+        """
+        string = "V"
+        string += "(" + str(self.val) + ")"
+        # string += "<" + self.get_ptr() + ">"
         return string
 
     def __repr__(self) -> str:
-        string = "V(" + str(self.get()) + ")"
-        string += "<" + self.get_ptr() + ">"
+        """
+
+        :return:
+        """
+        string = "V(" + str(self.val) + ")"
+        # string += "<" + self.get_ptr() + ">"
         return string

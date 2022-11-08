@@ -1,14 +1,16 @@
 import NeuralNode
+from NeuralGraph import NeuralGraph
 from NeuralNode import *
 
 
 class NeuralNet:
-    net: List[NeuralNode] = []
-    inputs: List[NeuralVar] = []
-    exits: List[NeuralNode] = []
 
     def __init__(self):
-        pass
+        self.net: List[NeuralNode] = []
+        self.inputs: List[NeuralVar] = []
+        self.exits: List[NeuralNode] = []
+        self.graph = NeuralGraph()
+        self.layers = []
 
     def __str__(self) -> str:
         string = "Net ("
@@ -17,30 +19,43 @@ class NeuralNet:
         string += ")"
         return string
 
+    def clear(self):
+        self.net.clear()
+        self.inputs.clear()
+        self.exits.clear()
+        self.layers = []
+
     def reset(self) -> None:
         for node in self.net:
             node.reset()
         self.setup_net_inputs()
 
-    def add_node(self, node) -> NeuralNode:
-        self.net.append(node)
-        self.reset()
-        return node
-
     def get_input_size(self) -> int:
         return len(self.inputs)
 
+    def add_new_layer(self, node):
+        self.layers.append([])
+        self.net.append(node)
+        self.layers[-1].append(node)
+        self.reset()
+        return node
+
+    def add_to_layer(self, node, layer):
+        while layer >= len(self.layers):
+            self.layers.append([])
+        self.net.append(node)
+        self.layers[layer].append(node)
+        self.reset()
+        return node
+
     def setup_net_inputs(self):
         self.inputs.clear()
-        self.exits = self.net.copy()
-        for node in self.net:
-            node_list_inputs = node.get_inputs()
-            for potential_input in node_list_inputs:
-                if isinstance(potential_input, NeuralVar):
-                    self.inputs.append(potential_input)
-                if isinstance(potential_input, NeuralNode):
-                    if potential_input in self.exits:
-                        self.exits.remove(potential_input)
+        for n in self.layers[0]:
+            for i in n.get_inputs():
+                self.inputs.append(i)
+        self.exits.clear()
+        for n in self.layers[-1]:
+            self.exits.append(n.output)
 
     def load(self, x_input: List[int]):
         if len(x_input) != self.get_input_size():
@@ -48,7 +63,7 @@ class NeuralNet:
         self.reset()
         for ix, x in enumerate(x_input):
             if isinstance(x, int):
-                self.inputs[ix].__val__ = x
+                self.inputs[ix].val = x
             elif isinstance(x, NeuralVar):
                 self.inputs[ix] = x
 
@@ -76,17 +91,21 @@ class NeuralNet:
         return node
 
     def template_xor(self) -> List[NeuralNode]:
-        x1 = self.add_node(self.tempate_pass())
-        x2 = self.add_node(self.tempate_pass())
-        n1 = self.add_node(NeuralNode([-1, 1], 0))
-        n2 = self.add_node(NeuralNode([1, -1], 0))
-        n3 = self.add_node(self.template_or())
+        x1 = self.add_to_layer(self.tempate_pass(), 0)
+        x2 = self.add_to_layer(self.tempate_pass(), 0)
+        n1 = self.add_to_layer(NeuralNode([-1, 1], 0), 1)
+        n2 = self.add_to_layer(NeuralNode([1, -1], 0), 1)
+        n3 = self.add_to_layer(self.template_or(), 2)
         x1.label = "X1"
         x2.label = "X2"
         self.node_load(n1, [x1, x2])
         self.node_load(n2, [x1, x2])
         self.node_load(n3, [n1, n2])
         return self.net
+
+    def get_output(self) -> List[float]:
+        string = [node.output.val for node in self.exits]
+        return string
 
     def process(self):
         process_check = [False] * len(self.net)
@@ -95,16 +114,6 @@ class NeuralNet:
             for node in self.net:
                 if not node.is_processed:
                     node.process()
-
-    def binary_test(self) -> None:
-        for combo in itertools.product([0, 1], repeat=self.get_input_size()):
-            self.load(combo)
-            self.process()
-            print("Input:", combo, "Output:", self.get_output())
-
-    def get_output(self) -> List[float]:
-        string = [node.output.__val__ for node in self.exits]
-        return string
 
     def merge_to_output(self, second_net, pos):
         self.net += second_net.net
@@ -119,3 +128,10 @@ class NeuralNet:
         self.reset()
         second_net.net.clear()
         return self.net
+
+    def binary_test(self):
+        for combo in itertools.product([0, 1], repeat=self.get_input_size()):
+            self.load(combo)
+            self.process()
+            self.graph.graph_test(self)
+            print("Input:", combo, "Output:", self.exits)
